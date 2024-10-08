@@ -1,0 +1,56 @@
+services:
+  postgresql:
+    image: postgres:15.3
+    container_name: booking-postgres
+    restart: on-failure
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
+    networks:
+      - mybridge
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+      - ./deployments/custom-postgresql.conf:/etc/postgresql/postgresql.conf # need to add all config and override later
+    environment:
+      POSTGRES_USER: postgres_user
+      POSTGRES_PASSWORD: postgres_pw
+      POSTGRES_DB: booking_db
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 80s
+
+  redis:
+    image: "redis:latest"
+    container_name: booking-redis
+    environment:
+      - REDIS_REPLICATION_MODE=master
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - "6379:6379"
+    networks:
+      - mybridge
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 30
+
+networks:
+  myhost:
+    driver: host
+  mybridge:
+    driver: bridge
+
+volumes:
+  postgresql-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/docker-volumes/booking/postgresql-data
+      o: bind
