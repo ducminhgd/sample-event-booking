@@ -1,4 +1,4 @@
-# Architcture decision record
+# Architecture decision record
 
 ## Context
 
